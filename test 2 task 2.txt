@@ -1,0 +1,90 @@
+-- вариант 1
+
+if object_id('findGroup') is not null
+   drop FUNCTION findGroup;
+go
+
+if object_id('calculate_total_price_for_orders_group') is not null
+   drop FUNCTION calculate_total_price_for_orders_group;
+go
+
+
+CREATE FUNCTION findGroup (@row_id INT = 10)
+    RETURNS TABLE
+    AS RETURN (
+		WITH RecursiveQuery (row_id)
+		AS
+		(
+		SELECT ord.row_id
+		FROM Orders as ord
+		WHERE ord.row_id = @row_id
+		UNION ALL
+		SELECT ord.row_id
+		FROM Orders as ord
+		JOIN RecursiveQuery rec ON ord.parent_id = rec.row_id
+		)
+		SELECT row_id
+		FROM RecursiveQuery);
+GO
+
+CREATE FUNCTION calculate_total_price_for_orders_group(@row_id INT = 10)
+    RETURNS TABLE
+    AS RETURN (SELECT SUM(price) as order_price
+        FROM findGroup(@row_id) as f_group
+			JOIN OrderItems as ordIt ON ordIt.order_id = f_group.row_id
+		);
+GO
+
+SELECT *
+    FROM calculate_total_price_for_orders_group(1)
+
+
+
+
+
+
+------------------------------------------
+
+
+
+-- вариант 2
+
+if object_id('findGroup') is not null
+   drop FUNCTION findGroup;
+go
+
+if object_id('calculate_total_price_for_orders_group') is not null
+   drop FUNCTION calculate_total_price_for_orders_group;
+go
+
+
+CREATE FUNCTION findGroup (@row_id INT = 10)
+    RETURNS TABLE
+    AS RETURN (
+		WITH RecursiveQuery (row_id)
+		AS
+		(
+		SELECT ord.row_id
+		FROM Orders as ord
+		WHERE ord.row_id = @row_id
+		UNION ALL
+		SELECT ord.row_id
+		FROM Orders as ord
+		JOIN RecursiveQuery rec ON ord.parent_id = rec.row_id
+		)
+		SELECT row_id
+		FROM RecursiveQuery);
+GO
+
+CREATE FUNCTION calculate_total_price_for_orders_group(@row_id INT = 10)
+    RETURNS DEC (14, 2)
+	BEGIN
+		DECLARE @totalSum DEC (14, 2)
+		SELECT @totalSum = SUM(price)
+        FROM findGroup(@row_id) as f_group
+			JOIN OrderItems as ordIt ON ordIt.order_id = f_group.row_id
+		RETURN @totalSum
+	END;
+GO
+
+SELECT dbo.calculate_total_price_for_orders_group(1) as total_price

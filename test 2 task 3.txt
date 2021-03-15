@@ -1,0 +1,10 @@
+SELECT Customers.name
+    FROM Orders  
+		JOIN OrderItems  
+			ON OrderItems.order_id = Orders.row_id
+		JOIN Customers  
+			ON Orders.customer_id = Customers.row_id
+    WHERE OrderItems.name = N'Кассовый аппарат' and 
+		YEAR(Orders.registered_at) = 2020
+	group by customer_id, Customers.name, order_id having count(*)>1
+GO 

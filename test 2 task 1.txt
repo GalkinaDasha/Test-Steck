@@ -1,0 +1,37 @@
+if object_id('ordIt') is not null
+   drop FUNCTION ordIt;
+go
+
+if object_id('selectOrders') is not null
+   drop FUNCTION selectOrders;
+go
+
+if object_id('select_orders_by_item_name') is not null
+   drop FUNCTION select_orders_by_item_name;
+go 
+
+CREATE FUNCTION ordIt (@positionName CHAR(20))
+    RETURNS TABLE
+    AS RETURN (SELECT order_id, count(*) as items_count
+					FROM dbo.OrderItems
+					WHERE OrderItems.name = @positionName
+					group by order_id);
+GO
+
+CREATE FUNCTION selectOrders (@positionName CHAR(20))
+    RETURNS TABLE
+    AS RETURN (SELECT ordIt.order_id, Customers.name, ordIt.items_count
+					FROM ordIt(@positionName) INNER JOIN Orders  
+						ON ordIt.order_id = Orders.row_id
+							INNER JOIN Customers  
+						ON Orders.customer_id = Customers.row_id);
+GO
+
+CREATE FUNCTION select_orders_by_item_name (@positionName CHAR(20))
+    RETURNS TABLE
+    AS RETURN (SELECT *
+        FROM selectOrders(@positionName));
+GO
+
+SELECT *
+    FROM select_orders_by_item_name(N'Факс')
